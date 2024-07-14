@@ -1,0 +1,58 @@
+networks:
+  istared:  # Definición de la red personalizada
+    driver: bridge  # Se utiliza el driver 'bridge' por defecto
+
+services:
+  database:
+    container_name: app-tec-db  # Nombre del contenedor para la base de datos
+    image: postgres:latest  # Imagen de PostgreSQL (última versión disponible)
+    restart: always  # Reinicio siempre en caso de fallo
+    ports:
+      - "5432:5432"  # Mapeo de puertos del contenedor al host
+    environment:  # Variables de entorno para la base de datos
+      - POSTGRES_DB=mydatabase  # Nombre de la base de datos
+      - POSTGRES_USER=admin  # Usuario de la base de datos
+      - POSTGRES_PASSWORD=admin123  # Contraseña del usuario
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Volumen persistente para los datos de PostgreSQL
+    networks:
+      - istared  # Conectar al mismo network 'istared' para comunicación interna
+
+  api:
+    container_name: app-tec-b  # Nombre del contenedor para la API
+    image: openjdk:17-jdk-alpine  # Imagen de OpenJDK 17 con Alpine Linux
+    restart: always  # Reinicio siempre en caso de fallo
+    ports:
+      - "8080:8080"  # Mapeo de puertos del contenedor al host
+    depends_on:
+      - database  # Dependencia del contenedor de la base de datos
+    volumes:
+      - ./backend/target/:/usr/src/app/  # Montar el directorio local al contenedor
+    environment:  # Variables de entorno para la API
+      - DATASOURCE_URL=jdbc:postgresql://app-tec-db:5432/mydatabase  # URL de conexión a la base de datos
+      - DATASOURCE_USERNAME=admin  # Usuario de la base de datos
+      - DATASOURCE_PASSWORD=admin123  # Contraseña del usuario
+    networks:
+      - istared  # Conectar al mismo network 'istared' para comunicación interna
+    working_dir: /usr/src/app/  # Directorio de trabajo dentro del contenedor
+    command: ["java", "-jar", "app.jar"]  # Comando para iniciar la aplicación
+
+  web:
+    container_name: app-tec-f  # Nombre del contenedor para el frontend web
+    image: nginx:latest  # Imagen de Nginx (última versión disponible)
+    restart: always  # Reinicio siempre en caso de fallo
+    ports:
+      - "8081:81"  # Mapeo de puertos del contenedor al host
+    depends_on:
+      - api  # Dependencia del contenedor de la API
+    volumes:
+      - ./frontend/dist/:/usr/share/nginx/html/  # Montar el directorio local al contenedor de Nginx
+      - ./frontend/nginx/conf/:/etc/nginx/conf.d/  # Configuración personalizada de Nginx
+    networks:
+      - istared  # Conectar al mismo network 'istared' para comunicación interna
+    command: ["nginx", "-g", "daemon off;"]
+   # command: /bin/bash -c "apt-get update && apt-get install -y iputils-ping && nginx -g 'daemon off;'"  # Comando personalizado para iniciar Nginx
+
+volumes:
+  postgres_data:  # Definición del volumen persistente para PostgreSQL
+
