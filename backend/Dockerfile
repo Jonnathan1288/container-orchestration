@@ -5,11 +5,10 @@ FROM openjdk:17.0.1-jdk-slim
 WORKDIR /app
 
 # Copia el archivo JAR de la aplicación al contenedor
-COPY target/sistemaMD-0.0.1-SNAPSHOT.jar /app/app.jar
+COPY ./app.jar /app/app.jar
 
 # Expone el puerto en el que la aplicación escuchará (opcional, según el puerto que use tu aplicación)
 EXPOSE 8080
 
 # Comando para iniciar la aplicación, usando las variables de entorno
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
-
